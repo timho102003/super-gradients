@@ -99,7 +99,6 @@ class DagsHubSGLogger(BaseSGLogger):
         }
 
         self.repo_name, self.repo_owner = None, None
-        self.__commit_data_type = []
 
         token = dagshub.auth.get_token()
         os.environ["MLFLOW_TRACKING_USERNAME"] = token
