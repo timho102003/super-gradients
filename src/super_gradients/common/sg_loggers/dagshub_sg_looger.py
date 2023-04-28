@@ -15,15 +15,18 @@ logger = get_logger(__name__)
 try:
     import dagshub
     from dagshub.upload import Repo
+
     _import_dagshub_error = None
 except (ModuleNotFoundError, ImportError, NameError) as dagshub_import_err:
     _import_dagshub_error = dagshub_import_err
 
 try:
     import mlflow
+
     _import_mlflow_error = None
 except (ModuleNotFoundError, ImportError, NameError) as mlflow_import_err:
     _import_mlflow_error = mlflow_import_err
+
 
 @register_sg_logger("dagshub_sg_logger")
 class DagsHubSGLogger(BaseSGLogger):
@@ -79,21 +82,19 @@ class DagsHubSGLogger(BaseSGLogger):
         )
         if _import_dagshub_error:
             raise _import_dagshub_error
-        
+
         if _import_mlflow_error:
             raise _import_mlflow_error
-        
+
         self._init_env_dependency()
 
     @staticmethod
     def splitter(repo):
         splitted = repo.split("/")
         if len(splitted) != 2:
-            raise ValueError(
-                f"Invalid input, should be owner_name/repo_name, but got {repo} instead"
-            )
+            raise ValueError(f"Invalid input, should be owner_name/repo_name, but got {repo} instead")
         return splitted[1], splitted[0]
-        
+
     def _init_env_dependency(self):
         """
         Look for .wandbinclude file in parent dirs and return the list of paths defined in the file.
@@ -117,9 +118,7 @@ class DagsHubSGLogger(BaseSGLogger):
 
         # Check mlflow environment variable is set:
         if not self.repo_name or not self.repo_owner:
-            self.repo_name, self.repo_owner = self.splitter(
-                input("Please insert your repository owner_name/repo_name:")
-            )
+            self.repo_name, self.repo_owner = self.splitter(input("Please insert your repository owner_name/repo_name:"))
 
         if not self.remote or "dagshub" not in os.getenv("MLFLOW_TRACKING_URI"):
             dagshub.init(repo_name=self.repo_name, repo_owner=self.repo_owner)
@@ -136,7 +135,7 @@ class DagsHubSGLogger(BaseSGLogger):
         mlflow.set_experiment(self.experiment_name)
         self.run = mlflow.start_run(nested=True)
         return self.run
-    
+
     @multi_process_safe
     def _dvc_add(self, local_path="", remote_path=""):
         if not os.path.isfile(local_path):
@@ -152,11 +151,11 @@ class DagsHubSGLogger(BaseSGLogger):
         super(DagsHubSGLogger, self).add_config(tag=tag, config=config)
         param_keys = config.keys()
         for pk in param_keys:
-          for k, v in config[pk].items():
-            try:
-              mlflow.log_params({k: v})
-            except:
-              logger.warning(f"Skip to log {k}: {v}")
+            for k, v in config[pk].items():
+                try:
+                    mlflow.log_params({k: v})
+                except:
+                    logger.warning(f"Skip to log {k}: {v}")
 
     @multi_process_safe
     def add_scalar(self, tag: str, scalar_value: float, global_step: int = 0):
