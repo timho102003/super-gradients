@@ -15,11 +15,13 @@ logger = get_logger(__name__)
 try:
     import dagshub
     from dagshub.upload import Repo
+    _import_dagshub_error = None
 except (ModuleNotFoundError, ImportError, NameError) as dagshub_import_err:
     _import_dagshub_error = dagshub_import_err
 
 try:
     import mlflow
+    _import_mlflow_error = None
 except (ModuleNotFoundError, ImportError, NameError) as mlflow_import_err:
     _import_mlflow_error = mlflow_import_err
 
@@ -82,6 +84,15 @@ class DagsHubSGLogger(BaseSGLogger):
             raise _import_mlflow_error
         
         self._init_env_dependency()
+
+    @staticmethod
+    def splitter(repo):
+        splitted = repo.split("/")
+        if len(splitted) != 2:
+            raise ValueError(
+                f"Invalid input, should be owner_name/repo_name, but got {repo} instead"
+            )
+        return splitted[1], splitted[0]
         
     def _init_env_dependency(self):
         """
@@ -98,7 +109,7 @@ class DagsHubSGLogger(BaseSGLogger):
             "artifacts": Path("artifacts"),
         }
 
-        self.repo_name, self.repo_owner = None, None
+        self.repo_name, self.repo_owner, self.remote = None, None, None
 
         token = dagshub.auth.get_token()
         os.environ["MLFLOW_TRACKING_USERNAME"] = token
@@ -139,7 +150,13 @@ class DagsHubSGLogger(BaseSGLogger):
     @multi_process_safe
     def add_config(self, tag: str, config: dict):
         super(DagsHubSGLogger, self).add_config(tag=tag, config=config)
-        mlflow.log_params(config)
+        param_keys = config.keys()
+        for pk in param_keys:
+          for k, v in config[pk].items():
+            try:
+              mlflow.log_params({k: v})
+            except:
+              logger.warning(f"Skip to log {k}: {v}")
 
     @multi_process_safe
     def add_scalar(self, tag: str, scalar_value: float, global_step: int = 0):
@@ -149,7 +166,7 @@ class DagsHubSGLogger(BaseSGLogger):
     @multi_process_safe
     def add_scalars(self, tag_scalar_dict: dict, global_step: int = 0):
         super(DagsHubSGLogger, self).add_scalars(tag_scalar_dict=tag_scalar_dict, global_step=global_step)
-        mlflow.log_metric(metrics=tag_scalar_dict, step=global_step)
+        mlflow.log_metrics(metrics=tag_scalar_dict, step=global_step)
 
     @multi_process_safe
     def add_text(self, tag: str, text_string: str, global_step: int = 0):
@@ -168,7 +185,7 @@ class DagsHubSGLogger(BaseSGLogger):
     def add_file(self, file_name: str = None):
         super().add_file(file_name)
         mlflow.log_artifact(file_name)
-        self._dvc_add(local_path=file_name, remote_path=os.path.join(self.paths["artifacts"], file_name))
+        self._dvc_add(local_path=file_name, remote_path=os.path.join(self.paths["artifacts"], file_name.split(os.sep)[0]))
         self._dvc_commit(commit="add file")
 
     @multi_process_safe
@@ -179,5 +196,5 @@ class DagsHubSGLogger(BaseSGLogger):
         path = os.path.join(self._local_dir, name)
         torch.save(state_dict, path)
         mlflow.log_artifact(path)
-        self._dvc_add(local_path=path, remote_path=os.path.join(self.paths["models"], path))
+        self._dvc_add(local_path=path, remote_path=os.path.join(self.paths["models"], name))
         self._dvc_commit(commit=f"log {global_step} checkpoint model")
