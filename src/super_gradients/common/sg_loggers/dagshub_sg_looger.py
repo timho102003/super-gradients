@@ -177,7 +177,6 @@ class DagsHubSGLogger(BaseSGLogger):
     @multi_process_safe
     def add_file(self, file_name: str = None):
         super().add_file(file_name)
-        mlflow.log_artifact(file_name)
         self._dvc_add(local_path=file_name, remote_path=os.path.join(self.paths["artifacts"], file_name.split(os.sep)[0]))
         self._dvc_commit(commit="add file")
 
@@ -188,6 +187,5 @@ class DagsHubSGLogger(BaseSGLogger):
             name += ".pth"
         path = os.path.join(self._local_dir, name)
         torch.save(state_dict, path)
-        mlflow.log_artifact(path)
         self._dvc_add(local_path=path, remote_path=os.path.join(self.paths["models"], name))
         self._dvc_commit(commit=f"log {global_step} checkpoint model")
