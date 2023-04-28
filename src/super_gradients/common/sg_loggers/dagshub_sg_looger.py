@@ -23,7 +23,7 @@ try:
 except (ModuleNotFoundError, ImportError, NameError) as mlflow_import_err:
     _import_mlflow_error = mlflow_import_err
 
-@register_sg_logger("wandb_sg_logger")
+@register_sg_logger("dagshub_sg_logger")
 class DagsHubSGLogger(BaseSGLogger):
     def __init__(
         self,
