@@ -45,6 +45,7 @@ class DagsHubSGLogger(BaseSGLogger):
         save_tensorboard_remote: bool = True,
         save_logs_remote: bool = True,
         monitor_system: bool = None,
+        dagshub_repository: Optional[str] = None,
     ):
         """
 
@@ -60,6 +61,7 @@ class DagsHubSGLogger(BaseSGLogger):
         :param save_tensorboard_remote: Saves tensorboard in s3.
         :param save_logs_remote:        Saves log files in s3.
         :param monitor_system:          Save the system statistics (GPU utilization, CPU, ...) in the tensorboard
+        :param dagshub_repository:      format: <dagshub_username>/<dagshub_reponame> format is set correctly to avoid any potential issues. If you are utilizing the dagshub_sg_logger, please specify the dagshub_repository in sg_logger_params to prevent any interruptions from prompts during automated pipelines. In the event that the repository does not exist, it will be created automatically on your behalf. 
         """
         if monitor_system is not None:
             logger.warning("monitor_system not available on DagsHubSGLogger. To remove this warning, please don't set monitor_system in your logger parameters")
@@ -85,6 +87,10 @@ class DagsHubSGLogger(BaseSGLogger):
 
         if _import_mlflow_error:
             raise _import_mlflow_error
+        
+        self.repo_name, self.repo_owner, self.remote = None, None, None
+        if dagshub_repository:
+            self.repo_name, self.repo_owner = self.splitter(dagshub_repository)
 
         self._init_env_dependency()
 
@@ -108,8 +114,6 @@ class DagsHubSGLogger(BaseSGLogger):
             "models": Path("models"),
             "artifacts": Path("artifacts"),
         }
-
-        self.repo_name, self.repo_owner, self.remote = None, None, None
 
         token = dagshub.auth.get_token()
         os.environ["MLFLOW_TRACKING_USERNAME"] = token
