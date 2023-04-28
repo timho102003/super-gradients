@@ -168,11 +168,6 @@ class DagsHubSGLogger(BaseSGLogger):
         mlflow.log_metrics(metrics=tag_scalar_dict, step=global_step)
 
     @multi_process_safe
-    def add_text(self, tag: str, text_string: str, global_step: int = 0):
-        super().add_text(tag, text_string, global_step)
-        mlflow.log_metric(key=tag, value=text_string, step=global_step)
-
-    @multi_process_safe
     def close(self):
         super().close()
         try:
