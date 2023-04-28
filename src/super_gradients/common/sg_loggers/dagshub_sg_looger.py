@@ -97,11 +97,10 @@ class DagsHubSGLogger(BaseSGLogger):
 
     def _init_env_dependency(self):
         """
-        Look for .wandbinclude file in parent dirs and return the list of paths defined in the file.
-
-        file structure is a single relative (i.e. src/) or a single type (i.e *.py)in each line.
-        the paths and types in the file are the paths and types to be included in code upload to wandb
-        :return: if file exists, return the list of paths and a list of types defined in the file
+        The function creates paths for the DVC directory, models, and artifacts, obtains an authentication token from Dagshub, and sets MLflow tracking credentials. 
+        It also checks whether the repository name and owner have been set and prompts the user to enter them if they haven't. 
+        If the remote URI is not set or does not include "dagshub", Dagshub is initialized with the repository name and owner, and the remote URI is obtained. 
+        The method then creates a Repo object with the repository information and sets the DVC folder to the DVC directory path. 
         """
 
         self.paths = {
