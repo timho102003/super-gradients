@@ -42,11 +42,12 @@ class DagsHubSGLogger(BaseSGLogger):
         launch_tensorboard: bool = False,
         tensorboard_port: int = None,
         save_checkpoints_remote: bool = True,
+        save_tensorboard_remote: bool = True,
         save_logs_remote: bool = True,
         monitor_system: bool = None,
         dagshub_repository: Optional[str] = None,
         dagshub_auth: Optional[str] = None,
-        artifact_log_dest: Optional[str] = "dvc",
+        dagshub_artifact_dest: Optional[str] = None,
     ):
         """
 
@@ -58,12 +59,13 @@ class DagsHubSGLogger(BaseSGLogger):
         :param tb_files_user_prompt:    Asks user for Tensorboard deletion prompt.
         :param launch_tensorboard:      Whether to launch a TensorBoard process.
         :param tensorboard_port:        Specific port number for the tensorboard to use when launched (when set to None, some free port number will be used
-        :param save_checkpoints_remote: Saves checkpoints in DagsHub.
-        :param save_logs_remote:        Saves log files in DagsHub.
+        :param save_checkpoints_remote: Saves checkpoints in s3 and DagsHub.
+        :param save_tensorboard_remote: Saves tensorboard in s3.
+        :param save_logs_remote:        Saves log files in s3 and DagsHub.
         :param monitor_system:          Save the system statistics (GPU utilization, CPU, ...) in the tensorboard
         :param dagshub_repository:      Format: <dagshub_username>/<dagshub_reponame> format is set correctly to avoid any potential issues. If you are utilizing the dagshub_sg_logger, please specify the dagshub_repository in sg_logger_params to prevent any interruptions from prompts during automated pipelines. In the event that the repository does not exist, it will be created automatically on your behalf. 
         :param dagshub_auth:            Provide dagshub authentication token for automatic pipeline
-        :param artifact_log_dest:       Choose which tool to use for artifact logging. Select "dvc" to log artifacts to DVC, "mlflow" to log to MLflow artifacts. Defaults to "dvc"
+        :param dagshub_artifact_dest:       Choose which tool to use for artifact logging. Select "dvc" to log artifacts to DVC, "mlflow" to log to MLflow artifacts. Defaults to "dvc"
         """
         if monitor_system is not None:
             logger.warning("monitor_system not available on DagsHubSGLogger. To remove this warning, please don't set monitor_system in your logger parameters")
@@ -99,7 +101,7 @@ class DagsHubSGLogger(BaseSGLogger):
 
         self._init_env_dependency()
 
-        self.artifact_log_destination = artifact_log_dest
+        self.artifact_log_destination = dagshub_artifact_dest
         self.save_checkpoints_dagshub = save_checkpoints_remote
         self.save_logs_dagshub = save_logs_remote
 
