@@ -486,7 +486,7 @@ training_params = { ...  # Your training params
                      {
                        "dagshub_repository": "<REPO_OWNER>/<REPO_NAME>", # Optional: Your DagsHub project name, consisting of the owner name, followed by '/', and the repo name. If this is left empty, you'll be prompted in your run to fill it in manually.
                        "dagshub_auth": "<DAGSHUB_TOKEN>",  # Optional: Auth token for DagsHub to automate authentication. Leave this empty and you'll be guided to an authentication link during your run. You can find your tokens in: https://dagshub.com/user/settings/tokens
-                       "dagshub_artifact_dest": "mlflow"/"dvc", # Optional: Choose which tool to use for artifact logging. Select "dvc" to log artifacts to DVC, "mlflow" to log to MLflow artifacts. Defaults to "dvc"                
+                       "log_mlflow_only": False, # Optional: Change to true to bypass logging to DVC, and log all artifacts only to MLflow  
                        "save_checkpoints_remote": True,
                        "save_tensorboard_remote": True,
                        "save_logs_remote": True,

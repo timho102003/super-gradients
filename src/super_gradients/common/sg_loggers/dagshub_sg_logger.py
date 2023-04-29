@@ -47,7 +47,7 @@ class DagsHubSGLogger(BaseSGLogger):
         monitor_system: bool = None,
         dagshub_repository: Optional[str] = None,
         dagshub_auth: Optional[str] = None,
-        dagshub_artifact_dest: Optional[str] = None,
+        log_mlflow_only: bool = False,
     ):
         """
 
@@ -65,7 +65,7 @@ class DagsHubSGLogger(BaseSGLogger):
         :param monitor_system:          Save the system statistics (GPU utilization, CPU, ...) in the tensorboard
         :param dagshub_repository:      Format: <dagshub_username>/<dagshub_reponame> format is set correctly to avoid any potential issues. If you are utilizing the dagshub_sg_logger, please specify the dagshub_repository in sg_logger_params to prevent any interruptions from prompts during automated pipelines. In the event that the repository does not exist, it will be created automatically on your behalf. 
         :param dagshub_auth:            Provide dagshub authentication token for automatic pipeline
-        :param dagshub_artifact_dest:       Choose which tool to use for artifact logging. Select "dvc" to log artifacts to DVC, "mlflow" to log to MLflow artifacts. Defaults to "dvc"
+        :param log_mlflow_only:         Skip logging to DVC, use MLflow for all artifacts being logged
         """
         if monitor_system is not None:
             logger.warning("monitor_system not available on DagsHubSGLogger. To remove this warning, please don't set monitor_system in your logger parameters")
@@ -101,7 +101,7 @@ class DagsHubSGLogger(BaseSGLogger):
 
         self._init_env_dependency()
 
-        self.artifact_log_destination = dagshub_artifact_dest
+        self.log_mlflow_only = log_mlflow_only
         self.save_checkpoints_dagshub = save_checkpoints_remote
         self.save_logs_dagshub = save_logs_remote
 
@@ -185,6 +185,8 @@ class DagsHubSGLogger(BaseSGLogger):
     def close(self):
         super().close()
         try:
+            if not self.log_mlflow_only:
+                self._dvc_commit(commit=f"Adding all artifacts from run {mlflow.active_run().info.run_id}")
             mlflow.end_run()
         except Exception:
             pass
@@ -192,18 +194,20 @@ class DagsHubSGLogger(BaseSGLogger):
     @multi_process_safe
     def add_file(self, file_name: str = None):
         super().add_file(file_name)
-        if self.artifact_log_destination is "mlflow":
+        if self.log_mlflow_only:
             mlflow.log_artifact(file_name)
         else:
-            self._dvc_add(local_path=file_name, remote_path=os.path.join(self.paths["artifacts"], file_name.split(os.sep)[0]))
-            self._dvc_commit(commit="add file")
+            self._dvc_add(local_path=file_name, remote_path=os.path.join(self.paths["artifacts"], self.experiment_log_path))
 
     @multi_process_safe
     def upload(self):
         super().upload()
 
         if self.save_logs_dagshub:
-            mlflow.log_artifact(self.experiment_log_path)
+            if self.log_mlflow_only:
+                mlflow.log_artifact(self.experiment_log_path)
+            else:
+                self._dvc_add(local_path=self.experiment_log_path, remote_path=os.path.join(self.paths["artifacts"], self.experiment_log_path))
 
     @multi_process_safe
     def add_checkpoint(self, tag: str, state_dict: dict, global_step: int = 0):
@@ -213,8 +217,6 @@ class DagsHubSGLogger(BaseSGLogger):
         path = os.path.join(self._local_dir, name)
         torch.save(state_dict, path)
         if self.save_checkpoints_dagshub:
-            if self.artifact_log_destination is "mlflow":
-                mlflow.log_artifact(path)
-            else:
+            mlflow.log_artifact(path)
+            if (global_step >= (self.max_global_steps - 1)) and not self.log_mlflow_only:
                 self._dvc_add(local_path=path, remote_path=os.path.join(self.paths["models"], name))
-                self._dvc_commit(commit=f"log {tag} model for epoch {global_step} checkpoint")
