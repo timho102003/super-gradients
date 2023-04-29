@@ -471,6 +471,32 @@ train_params = {"phase_callbacks": phase_callbacks}
 
 <details>
 
+<summary><h3> Integration to DagsHub </h3></summary>    
+
+
+```python
+from super_gradients import Trainer
+
+trainer = Trainer("experiment_name")
+model = ...
+
+training_params = { ...  # Your training params
+                   "sg_logger": "dagshub_sg_logger",  # DagsHub Logger, see class super_gradients.common.sg_loggers.dagshub_sg_logger.DagsHubSGLogger for details
+                   "sg_logger_params":  # Params that will be passes to __init__ of the logger super_gradients.common.sg_loggers.dagshub_sg_logger.DagsHubSGLogger
+                     {
+                       "dagshub_repository": "<REPO_OWNER>/<REPO_NAME>", # Optional: Your DagsHub project name, consisting of the owner name, followed by '/', and the repo name. If this is left empty, you'll be prompted in your run to fill it in manually.
+                       "dagshub_auth": "<DAGSHUB_TOKEN>"  # Optional: Auth token for DagsHub to automate authentication. Leave this empty and you'll be guided to an authentication link during your run. You can find your tokens in: https://dagshub.com/user/settings/tokens  
+                       "save_checkpoints_remote": True,
+                       "save_tensorboard_remote": True,
+                       "save_logs_remote": True,
+                     }
+                   }
+```
+
+</details>
+
+<details>
+
 <summary><h3> Integration to Weights and Biases </h3></summary>    
   
 
