@@ -27,7 +27,8 @@ training_params = {
     "sg_logger_params":               # Params that will be passes to __init__ of the logger super_gradients.common.sg_loggers.dagshub_sg_logger.DagsHubSGLogger
       {
         "dagshub_repository": "<REPO_OWNER>/<REPO_NAME>", # Optional: Your DagsHub project name, consisting of the owner name, followed by '/', and the repo name. If this is left empty, you'll be prompted in your run to fill it in manually.
-        "dagshub_auth": "<DAGSHUB_TOKEN>" # Optional: Auth token for DagsHub to automate authentication. Leave this empty and you'll be guided to an authentication link during your run. You can find your tokens in: https://dagshub.com/user/settings/tokens  
+        "dagshub_auth": "<DAGSHUB_TOKEN>", # Optional: Auth token for DagsHub to automate authentication. Leave this empty and you'll be guided to an authentication link during your run. You can find your tokens in: https://dagshub.com/user/settings/tokens
+        "dagshub_artifact_dest": "mlflow"/"dvc", # Optional: Choose which tool to use for artifact logging. Select "dvc" to log artifacts to DVC, "mlflow" to log to MLflow artifacts. Defaults to "dvc"                                
         "save_checkpoints_remote": True,
         "save_tensorboard_remote": True,
         "save_logs_remote": True,

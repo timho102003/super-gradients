@@ -47,6 +47,7 @@ class DagsHubSGLogger(BaseSGLogger):
         monitor_system: bool = None,
         dagshub_repository: Optional[str] = None,
         dagshub_auth: Optional[str] = None,
+        dagshub_artifact_dest: Optional[str] = None,
     ):
         """
 
@@ -58,12 +59,13 @@ class DagsHubSGLogger(BaseSGLogger):
         :param tb_files_user_prompt:    Asks user for Tensorboard deletion prompt.
         :param launch_tensorboard:      Whether to launch a TensorBoard process.
         :param tensorboard_port:        Specific port number for the tensorboard to use when launched (when set to None, some free port number will be used
-        :param save_checkpoints_remote: Saves checkpoints in s3.
+        :param save_checkpoints_remote: Saves checkpoints in s3 and DagsHub.
         :param save_tensorboard_remote: Saves tensorboard in s3.
-        :param save_logs_remote:        Saves log files in s3.
+        :param save_logs_remote:        Saves log files in s3 and DagsHub.
         :param monitor_system:          Save the system statistics (GPU utilization, CPU, ...) in the tensorboard
         :param dagshub_repository:      Format: <dagshub_username>/<dagshub_reponame> format is set correctly to avoid any potential issues. If you are utilizing the dagshub_sg_logger, please specify the dagshub_repository in sg_logger_params to prevent any interruptions from prompts during automated pipelines. In the event that the repository does not exist, it will be created automatically on your behalf. 
         :param dagshub_auth:            Provide dagshub authentication token for automatic pipeline
+        :param dagshub_artifact_dest:       Choose which tool to use for artifact logging. Select "dvc" to log artifacts to DVC, "mlflow" to log to MLflow artifacts. Defaults to "dvc"
         """
         if monitor_system is not None:
             logger.warning("monitor_system not available on DagsHubSGLogger. To remove this warning, please don't set monitor_system in your logger parameters")
@@ -96,7 +98,12 @@ class DagsHubSGLogger(BaseSGLogger):
         
         if dagshub_auth:
           dagshub.auth.add_app_token(dagshub_auth)
+
         self._init_env_dependency()
+
+        self.artifact_log_destination = dagshub_artifact_dest
+        self.save_checkpoints_dagshub = save_checkpoints_remote
+        self.save_logs_dagshub = save_logs_remote
 
     @staticmethod
     def splitter(repo):
@@ -185,8 +192,18 @@ class DagsHubSGLogger(BaseSGLogger):
     @multi_process_safe
     def add_file(self, file_name: str = None):
         super().add_file(file_name)
-        self._dvc_add(local_path=file_name, remote_path=os.path.join(self.paths["artifacts"], file_name.split(os.sep)[0]))
-        self._dvc_commit(commit="add file")
+        if self.artifact_log_destination is "mlflow":
+            mlflow.log_artifact(file_name)
+        else:
+            self._dvc_add(local_path=file_name, remote_path=os.path.join(self.paths["artifacts"], file_name.split(os.sep)[0]))
+            self._dvc_commit(commit="add file")
+
+    @multi_process_safe
+    def upload(self):
+        super().upload()
+
+        if self.save_logs_dagshub:
+            mlflow.log_artifact(self.experiment_log_path)
 
     @multi_process_safe
     def add_checkpoint(self, tag: str, state_dict: dict, global_step: int = 0):
@@ -195,5 +212,9 @@ class DagsHubSGLogger(BaseSGLogger):
             name += ".pth"
         path = os.path.join(self._local_dir, name)
         torch.save(state_dict, path)
-        self._dvc_add(local_path=path, remote_path=os.path.join(self.paths["models"], name))
-        self._dvc_commit(commit=f"log {global_step} checkpoint model")
+        if self.save_checkpoints_dagshub:
+            if self.artifact_log_destination is "mlflow":
+                mlflow.log_artifact(path)
+            else:
+                self._dvc_add(local_path=path, remote_path=os.path.join(self.paths["models"], name))
+                self._dvc_commit(commit=f"log {tag} model for epoch {global_step} checkpoint")
