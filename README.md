@@ -1,4 +1,4 @@
-<div align="center">
+<div align="center" markdown="1">
   <img src="docs/assets/SG_img/SG - Horizontal Glow 2.png" width="600"/>
  <br/><br/>
   
@@ -7,10 +7,11 @@
 
 #### Version 3 is out! Notebooks have been updated!
 ______________________________________________________________________
-  
-  <p align="center">
+</div>  
+<div align="center">
+<p align="center">
   <a href="https://www.supergradients.com/">Website</a> •
-  <a href="https://deci-ai.github.io/super-gradients/welcome.html">Docs</a> •
+  <a href="https://docs.deci.ai/super-gradients/documentation/source/welcome.html">Docs</a> •
   <a href="#getting-started">Getting Started</a> •
   <a href="#implemented-model-architectures">Pretrained Models</a> •
   <a href="#community">Community</a> •
@@ -25,9 +26,11 @@ ______________________________________________________________________
   <a href="https://github.com/Deci-AI/super-gradients/releases"><img src="https://img.shields.io/github/v/release/Deci-AI/super-gradients" />
   <a href="https://join.slack.com/t/supergradients-comm52/shared_invite/zt-10vz6o1ia-b_0W5jEPEnuHXm087K~t8Q"><img src="https://img.shields.io/badge/slack-community-blueviolet" />
   <a href="https://github.com/Deci-AI/super-gradients/blob/master/LICENSE.md"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" />
-  <a href="https://deci-ai.github.io/super-gradients/welcome.html"><img src="https://img.shields.io/badge/docs-sphinx-brightgreen" />
+  <a href="https://docs.deci.ai/super-gradients/documentation/source/welcome.html"><img src="https://img.shields.io/badge/docs-mkdocs-brightgreen" /></a>
 </p>    
 </div>
+
+______________________________________________________________________
 
 ## Build with SuperGradients
 __________________________________________________________________________________________________________
@@ -41,12 +44,20 @@ ________________________________________________________________________________
 
 
 ### Ready to deploy pre-trained SOTA models
+
+YOLO-NAS architecture is out! The new YOLO-NAS delivers state-of-the-art performance with the unparalleled accuracy-speed performance, outperforming other models such as YOLOv5, YOLOv6, YOLOv7 and YOLOv8.
+Check it out here: [YOLO-NAS](YOLONAS.md).
+
+<div align="center">
+<img src="./documentation/source/images/yolo_nas_frontier.png" width="800px">
+</div>
+
 ```python
 # Load model with pretrained weights
 from super_gradients.training import models
 from super_gradients.common.object_names import Models
 
-model = models.get(Models.YOLOX_S, pretrained_weights="coco")
+model = models.get(Models.YOLO_NAS_M, pretrained_weights="coco")
 ```
 #### All Computer Vision Models - Pretrained Checkpoints can be found in the [Model Zoo](http://bit.ly/41dkt89)
 
@@ -86,17 +97,17 @@ All SuperGradients models’ are production ready in the sense that they are com
 from super_gradients.training import models
 from super_gradients.common.object_names import Models
 
-model = models.get(Models.YOLOX_S, pretrained_weights="coco")
+model = models.get(Models.YOLO_NAS_M, pretrained_weights="coco")
 
 # Prepare model for conversion
-# Input size is in format of [Batch x Channels x Width x Height] where 640 is the standart COCO dataset dimensions
+# Input size is in format of [Batch x Channels x Width x Height] where 640 is the standard COCO dataset dimensions
 model.eval()
 model.prep_model_for_conversion(input_size=[1, 3, 640, 640])
     
 # Create dummy_input
 
 # Convert model to onnx
-torch.onnx.export(model, dummy_input,  "yolox_s.onnx")
+torch.onnx.export(model, dummy_input,  "yolo_nas_m.onnx")
 ```
 More information on how to take your model to production can be found in [Getting Started](#getting-started) notebooks
 
@@ -109,26 +120,27 @@ ________________________________________________________________________________
 pip install super-gradients
 ```
 
-## What's New - Version 3.0.8
+## What's New - Version 3.1.1 (May 3rd)
 __________________________________________________________________________________________________________
-*  [QAT&PTQ](https://bit.ly/41hC8uI)
-* [Pose estimation](http://bit.ly/3o0xHq2)
-* [New documentation](http://bit.ly/3KYVCiJ)
-* [New semantic segmentation dataset - Mapillary Vistas Dataset](https://github.com/Deci-AI/super-gradients/blob/master/src/super_gradients/training/datasets/segmentation_datasets/mapillary_dataset.py)
-*  Lion optimizer
-* PP-YoloE pre-trained - new pre-trained [checkpoints](https://bit.ly/41dkt89) and [recipes](http://bit.ly/3gfLw07) for COCO2017 🎯
-* DDRNet pre-trained segmentation model - new pre-trained [checkpoints](https://bit.ly/41dkt89) and [recipes](http://bit.ly/3gfLw07) for Cityscapes and  [Knowledge distillation recipe for DDRNet](http://bit.ly/3GzZHHo)🎯
-
+* [YOLO-NAS](https://bit.ly/41WeNPZ)
+* New [predict function](https://bit.ly/3oZfaea) (predict on any image, video, url, path, stream)
+* [RoboFlow100](https://bit.ly/40YOJ5z) datasets integration 
+* A new [Documentation Hub](https://docs.deci.ai/super-gradients/documentation/source/welcome.html)
+* Integration with [DagsHub for experiment monitoring](https://bit.ly/3ALFUkQ)
+* Support [Darknet/Yolo format detection dataset](https://bit.ly/41VX6Qu) (used by Yolo v5, v6, v7, v8) 
+* [Segformer](https://bit.ly/3oYu6Jp) model and recipe 
+* Post Training Quantization and Quantization Aware Training - [notebooks](http://bit.ly/3KrN6an)
 
 Check out SG full [release notes](https://github.com/Deci-AI/super-gradients/releases).
 
 ## Coming soon
 __________________________________________________________________________________________________________
 - [ ] Pre-trained pose estimation model
-- [ ] New predict function on detection models
-- [ ] RoboFlow100 datasets integration 
-- [ ] A new documentation hub
+- [ ] Test Time Augmentations (TTA)
+- [ ] Recipe to train DEKR model(convertable to TRT) 
+- [ ] Key-points Rescoring for Pose estimation 
 - [ ] LR finder
+- [ ] Data analysis tools
 
 
 ## Table of Content
@@ -310,7 +322,7 @@ Recipes support out of the box every model, metric or loss that is implemented i
  </br></br>
 
  </br>
-<details>
+<details markdown="1">
   <summary><h3>Using Distributed Data Parallel (DDP) </h3></summary>
 
 #### Why use DDP ?
@@ -422,7 +434,7 @@ There is no clear rule, but a rule of thumb seems to be to [linearly increase th
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><h3> Easily change architectures parameters </h3></summary>
 
 ```python
@@ -440,7 +452,7 @@ backbone_resnet18 = models.get(model_name="resnet18", arch_params={"backbone_mod
 
 </details>
 
-<details>
+<details markdown="1">
 
 <summary><h3> Using phase callbacks </h3></summary>  
   
@@ -469,7 +481,7 @@ train_params = {"phase_callbacks": phase_callbacks}
 
 </details>
 
-<details>
+<details markdown="1">
 
 <summary><h3> Integration to DagsHub </h3></summary>    
 
@@ -521,7 +533,7 @@ train_params = { ... # training parameters
 
 </details>
 
-<details>
+<details markdown="1">
 
 <summary><h3> Integration to ClearML </h3></summary>    
     
@@ -549,7 +561,7 @@ train_params = { ... # training parameters
 ## Installation Methods
 __________________________________________________________________________________________________________
 ### Prerequisites
-<details>
+<details markdown="1">
   
 <summary>General requirements</summary>
   
@@ -560,7 +572,7 @@ ________________________________________________________________________________
 
 </details>
     
-<details>
+<details markdown="1">
   
 <summary>To train on nvidia GPUs</summary>
   
@@ -572,7 +584,7 @@ ________________________________________________________________________________
     
 ### Quick Installation
 
-<details>
+<details markdown="1">
   
 <summary>Install stable version using PyPi</summary>
 
@@ -585,7 +597,7 @@ That's it !
 
 </details>
     
-<details>
+<details markdown="1">
   
 <summary>Install using GitHub</summary>
 
@@ -677,7 +689,7 @@ ________________________________________________________________________________
 
 ## Documentation
 
-Check SuperGradients [Docs](https://deci-ai.github.io/super-gradients/welcome.html) for full documentation, user guide, and examples.
+Check SuperGradients [Docs](https://docs.deci.ai/super-gradients/documentation/source/welcome.html) for full documentation, user guide, and examples.
   
 ## Contributing
 
@@ -701,8 +713,8 @@ If you are using SuperGradients library or benchmarks in your research, please c
 If you want to be a part of SuperGradients growing community, hear about all the exciting news and updates, need help, request for advanced features,
     or want to file a bug or issue report, we would love to welcome you aboard!
 
-* Slack is the place to be and ask questions about SuperGradients and get support. [Click here to join our Slack](
-  https://join.slack.com/t/supergradients-comm52/shared_invite/zt-10vz6o1ia-b_0W5jEPEnuHXm087K~t8Q)
+* Discord is the place to be and ask questions about SuperGradients and get support. [Click here to join our Discord Community](
+  https://discord.gg/2v6cEGMREN)
     
 * To report a bug, [file an issue](https://github.com/Deci-AI/super-gradients/issues) on GitHub.
 
