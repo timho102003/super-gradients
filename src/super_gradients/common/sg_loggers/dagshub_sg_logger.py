@@ -1,4 +1,4 @@
-import os
+import os, re
 from pathlib import Path
 from typing import Optional, Mapping
 
@@ -175,6 +175,14 @@ class DagsHubSGLogger(BaseSGLogger):
             else:
                 items.append((new_key, v))
         return items
+    
+    @multi_process_safe
+    def _contains_special_characters(self, text):
+        pattern = r"[!\"#$%&'()*+,:;<=>?@[\]^`{|}~\t\n\r\x0b\x0c]"
+        matches = re.findall(pattern, text)
+        if matches:
+            return True, ", ".join(matches)
+        return False, None
 
     @multi_process_safe
     def add_config(self, tag: str, config: dict):
@@ -184,7 +192,12 @@ class DagsHubSGLogger(BaseSGLogger):
             try:
                 mlflow.log_params({k: v})
             except Exception as e:
-                logger.debug(e)
+                is_contain, spec_char = self._contains_special_characters(k)
+                if is_contain:
+                    err_msg = f"Fail to log {k}, please remove the unsupported characters: {spec_char}"
+                else:
+                    err_msg = f"Fail to log the config: {k}, got an expection: {e}"
+                logger.warning(err_msg)
 
     @multi_process_safe
     def add_scalar(self, tag: str, scalar_value: float, global_step: int = 0):
@@ -192,7 +205,12 @@ class DagsHubSGLogger(BaseSGLogger):
         try:
             mlflow.log_metric(key=tag, value=scalar_value, step=global_step)
         except Exception as e:
-            logger.debug(e)
+            is_contain, spec_char = self._contains_special_characters(k)
+            if is_contain:
+                err_msg = f"Fail to log {tag}, please remove the unsupported characters: {spec_char}"
+            else:
+                err_msg = f"Fail to log the metric: {tag}, got an expection: {e}"
+            raise Exception(err_msg)
 
     @multi_process_safe
     def add_scalars(self, tag_scalar_dict: dict, global_step: int = 0):
@@ -209,7 +227,7 @@ class DagsHubSGLogger(BaseSGLogger):
                         v = float(v)
                     self.add_scalar(tag=k.replace("@", "at"), scalar_value=v, global_step=global_step)
                 except Exception as e:
-                    logger.debug(f"error: {e}")
+                    logger.warning(e)
 
     @multi_process_safe
     def close(self):
